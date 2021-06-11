@@ -13,10 +13,16 @@ library(tidyverse)
 library(lubridate)
 library(patchwork)
 
+source('R/funcs.R')
+
 levs <- c('OTB', 'HB', 'MTB', 'LTB')
 
 data(moddat)
-avedat <- anlz_avedat(epcdata)
+avedat <- anlz_avedat(epcdata) 
+avedat$ann <- avedat$ann %>% 
+    filter(yr >= min(moddat$ann$yr) & yr <= max(moddat$ann$yr))
+avedat$mos <- avedat$mos %>% 
+    filter(yr >= min(moddat$ann$yr) & yr <= max(moddat$ann$yr))
 ```
 
 # {.tabset}
@@ -145,7 +151,6 @@ moddatmos <- moddat %>%
 
 obsdatmos <- avedat %>%
   .$mos %>%
-  filter(yr >= min(moddatmos$yr) & yr <= max(moddatmos$yr)) %>%
   filter(var != 'mean_sdm') %>% 
   rename(valobs = val)
 
@@ -198,7 +203,6 @@ moddatmos <- moddat %>%
 
 obsdatmos <- avedat %>%
   .$mos %>%
-  filter(yr >= min(moddatmos$yr) & yr <= max(moddatmos$yr)) %>%
   filter(var != 'mean_sdm') %>% 
   rename(valobs = val)
 
@@ -248,3 +252,62 @@ p1 + p2 + plot_layout(ncol = 1, guides = 'collect') &
 
 ## Reporting {.tabset .tabset-pills}
 
+### Observed report card
+
+```{r, fig.height = 7, fig.width = 4}
+show_matrixtmp(avedat)
+```
+
+### Modelled report card
+
+```{r, fig.height = 7, fig.width = 4}
+show_matrixtmp(moddat)
+```
+
+### Observed OTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(avedat, bay_segment = 'OTB')
+```
+
+### Modelled OTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(moddat, bay_segment = 'OTB')
+```
+
+### Observed HB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(avedat, bay_segment = 'HB')
+```
+
+### Modelled HB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(moddat, bay_segment = 'HB')
+```
+
+### Observed MTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(avedat, bay_segment = 'MTB')
+```
+
+### Modelled MTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(moddat, bay_segment = 'MTB')
+```
+
+### Observed LTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(avedat, bay_segment = 'LTB')
+```
+
+### Modelled LTB
+
+```{r, fig.height = 5.5, fig.width = 10}
+show_segplotlytmp(moddat, bay_segment = 'LTB')
+```
