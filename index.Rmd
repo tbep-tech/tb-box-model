@@ -110,7 +110,7 @@ toplo2 <- alldatann %>%
 p1lims <- range(c(toplo1$valobs, toplo1$valmod), na.rm = T)
 p2lims <- range(c(toplo2$valobs, toplo2$valmod), na.rm = T)
 
-gds <- guides(color = guide_legend(override.aes = list(pch = c(16, NA), linetype = c(NA, 1))))
+gds <- guides(color = guide_legend(override.aes = list(pch = c(NA, 16), linetype = c(1, NA))))
 p1 <- ggplot(toplo1, aes(x = yr, y = valmod, color = 'Modelled')) + 
   geom_line() + 
   geom_point(aes(y = valobs, color = 'Observed')) +
@@ -218,7 +218,7 @@ toplo1 <- alldatmos %>%
 toplo2 <- alldatmos %>% 
   filter(var == 'mean_chla')
 
-gds <- guides(color = guide_legend(override.aes = list(pch = c(16, NA), linetype = c(NA, 1))))
+gds <- guides(color = guide_legend(override.aes = list(pch = c(NA, 16), linetype = c(1, NA))))
 p1 <- ggplot(toplo1, aes(x = date, y = valmod, color = 'Modelled')) + 
   geom_line() + 
   geom_point(aes(y = valobs, color = 'Observed')) +
