@@ -4,10 +4,12 @@ library(data.table)
 library(lubridate)
 library(tbeptools)
 
+# get raw model output, minimal formatting ----------------------------------------------------
+
 # Import model output as txt file in wide format, without column headers:
 datraw <- fread("C:/box_model/test_run/V6_BM_SM36.txt", skip=0, header = FALSE)
 
-dat <- datraw |> set_names(c(    'Station_ID',
+moddat <- datraw |> set_names(c(    'Station_ID',
                                  'Sim_Day',
                                  'Seg_Depth_m',
                                  'W_Temp_C',
@@ -66,13 +68,21 @@ dat <- datraw |> set_names(c(    'Station_ID',
                                  'PON2SD',
                                  'SOD',
                                  'NH4_Flx',
-                                 'PO4_Flx'))
+                                 'PO4_Flx')) |>
+  as_tibble() |>
+  mutate(
+    Date = make_date(year=1985, month=1, day=1),
+    Date = (Date + Sim_Day)
+  ) |>
+  rename(modseg = Station_ID)
 
-dat <- dat |>
-  tibble() |>
-  mutate(Start_Date = make_date(year=1985, month=1, day=1))|>
-  mutate(Date_Time = (Start_Date + Sim_Day)) |>
-  rename(modseg = Station_ID) |>
+save(moddat, file = here('data/moddat.RData'))
+
+# get annual and monthly sums of model data ---------------------------------------------------
+
+load(file = here('data/moddat.RData'))
+
+dat <- moddat |>
   filter(modseg < 11) |>
   mutate(
     bay_segment = case_when(
@@ -81,11 +91,11 @@ dat <- dat |>
       modseg %in% c(6:8) ~ 'MTB',
       modseg %in% c(9:10) ~ 'LTB'
     ),
-    Date_Time = ymd(Date_Time),
-    month = month(ymd(Date_Time)),
-    year = year(ymd(Date_Time))
+    Date = ymd(Date),
+    month = month(ymd(Date)),
+    year = year(ymd(Date))
   ) |>
-  select(dt = Date_Time, bay_segment, modseg, yr = year, mo = month,
+  select(dt = Date, bay_segment, modseg, yr = year, mo = month,
          mean_chla = Tot_CHL, mean_la = Ke_Tot)
 
 moddatmo <- dat |>
@@ -106,9 +116,9 @@ moddatann <- moddatmo |>
     .by = c('bay_segment', 'yr', 'var')
   )
 
-moddat <- list(
+moddatannmos <- list(
   ann = moddatann,
   mos = moddatmo
 )
 
-save(moddat, file = here('data/moddat.RData'), version = 2)
+save(moddatannmos, file = here('data/moddatannmos.RData'), version = 2)
