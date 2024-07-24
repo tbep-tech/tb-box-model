@@ -149,6 +149,7 @@ modsegs <- tibble::tibble(
   st_sf() |>
   mutate(
     seg = gsub('^.*\\s(\\d+).*', '\\1', basename(shps))
-  )
+  ) |>
+  st_make_valid()
 
 save(modsegs, file = here('data/modsegs.RData'))
