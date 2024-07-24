@@ -1,0 +1,364 @@
+---
+title: Tampa Bay box model reporting products
+date: "`r Sys.Date()`"
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    code-tools: 
+      source: https://github.com/tbep-tech/tb-box-model/blob/main/docs/reporting.qmd
+execute:
+  echo: false
+  warning: false
+  message: false
+  eval: true
+  
+filters:
+  - lightbox
+  
+lightbox: auto
+---
+
+```{r}
+library(tbeptools)
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+library(here)
+
+source(here('R/funcs.R'))
+
+levs <- c('OTB', 'HB', 'MTB', 'LTB')
+
+load(file = here('data/moddat.RData'))
+avedat <- anlz_avedat(epcdata) 
+avedat$ann <- avedat$ann %>% 
+    filter(yr >= min(moddat$ann$yr) & yr <= max(moddat$ann$yr))
+avedat$mos <- avedat$mos %>% 
+    filter(yr >= min(moddat$ann$yr) & yr <= max(moddat$ann$yr))
+```
+
+::: {.panel-tabset}
+
+## Predicted vs observed
+
+::: {.panel-tabset .nav-pills}
+
+### Annual 1:1 
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+moddatann <- moddat %>%
+  .$ann %>% 
+  rename(valmod = val)
+
+obsdatann <- avedat %>%
+  .$ann %>%
+  filter(yr >= min(moddatann$yr) & yr <= max(moddatann$yr)) %>%
+  filter(var != 'mean_sdm') %>% 
+  rename(valobs = val)
+
+alldatann <- full_join(obsdatann, moddatann, by = c('yr', 'bay_segment', 'var')) %>% 
+  mutate(
+    bay_segment = factor(bay_segment, levels = levs)
+  )
+
+toplo1 <- alldatann %>% 
+  filter(var == 'mean_la')
+toplo2 <- alldatann %>% 
+  filter(var == 'mean_chla')
+
+p1lims <- range(c(toplo1$valobs, toplo1$valmod), na.rm = T)
+p2lims <- range(c(toplo2$valobs, toplo2$valmod), na.rm = T)
+
+p1 <- ggplot(toplo1, aes(x = valobs, y = valmod)) + 
+  geom_point() + 
+  facet_grid(~ bay_segment) +
+  theme_bw() + 
+  scale_x_continuous(limits = p1lims) + 
+  scale_y_continuous(limits = p1lims) +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(
+    subtitle = 'Annual average light attenuation (m-1)', 
+    y = 'Modelled', 
+    x = 'Observed'
+  )
+
+p2 <- ggplot(toplo2, aes(x = valobs, y = valmod)) + 
+  geom_point() + 
+  facet_grid(~ bay_segment) +
+  theme_bw() + 
+  geom_abline(slope = 1, intercept = 0) +
+  scale_x_continuous(limits = p2lims) + 
+  scale_y_continuous(limits = p2lims) +
+  labs(
+    subtitle = 'Annual average chlorophyll (ug/L)', 
+    y = 'Modelled', 
+    x = 'Observed'
+  )
+
+p1 + p2 + plot_layout(ncol = 1) & theme(strip.background = element_blank())
+```
+
+### Annual time series
+
+```{r}
+#| fig-height: 8
+#| fig-width: 8
+moddatann <- moddat %>%
+  .$ann %>% 
+  rename(valmod = val)
+
+obsdatann <- avedat %>%
+  .$ann %>%
+  filter(yr >= min(moddatann$yr) & yr <= max(moddatann$yr)) %>%
+  filter(var != 'mean_sdm') %>% 
+  rename(valobs = val)
+
+alldatann <- full_join(obsdatann, moddatann, by = c('yr', 'bay_segment', 'var')) %>% 
+  mutate(
+    bay_segment = factor(bay_segment, levels = levs)
+  )
+
+toplo1 <- alldatann %>% 
+  filter(var == 'mean_la')
+toplo2 <- alldatann %>% 
+  filter(var == 'mean_chla')
+
+p1lims <- range(c(toplo1$valobs, toplo1$valmod), na.rm = T)
+p2lims <- range(c(toplo2$valobs, toplo2$valmod), na.rm = T)
+
+gds <- guides(color = guide_legend(override.aes = list(pch = c(NA, 16), linetype = c(1, NA))))
+p1 <- ggplot(toplo1, aes(x = yr, y = valmod, color = 'Modelled')) + 
+  geom_line() + 
+  geom_point(aes(y = valobs, color = 'Observed')) +
+  facet_grid(bay_segment ~ .) +
+  theme_bw() + 
+  labs(
+    y = 'Annual average light attenuation (m-1)'
+  ) + 
+  scale_colour_manual(values = c('black', 'black')) +
+  gds
+
+p2 <- ggplot(toplo2, aes(x = yr, y = valmod, color = 'Modelled')) + 
+  geom_line() + 
+  geom_point(aes(y = valobs, color = 'Observed')) +
+  facet_grid(bay_segment ~ .) +
+  theme_bw() + 
+  labs(
+    y = 'Annual average chlorophyll (ug/L)'
+  ) + 
+  scale_colour_manual(values = c('black', 'black')) + 
+  gds
+
+p1 + p2 + plot_layout(ncol = 1, guides = 'collect') & 
+  theme(
+    strip.background = element_blank(), 
+    legend.title = element_blank(),
+    legend.position = 'top', 
+    axis.title.x = element_blank()
+    )
+```
+
+### Monthly 1:1
+
+```{r}
+#| fig-height: 5
+#| fig-width: 8
+moddatmos <- moddat %>%
+  .$mos %>% 
+  rename(valmod = val)
+
+obsdatmos <- avedat %>%
+  .$mos %>%
+  filter(var != 'mean_sdm') %>% 
+  rename(valobs = val)
+
+
+alldatmos <- full_join(obsdatmos, moddatmos, by = c('yr', 'mo', 'bay_segment', 'var')) %>% 
+  mutate(
+    bay_segment = factor(bay_segment, levels = levs)
+  )
+
+toplo1 <- alldatmos %>% 
+  filter(var == 'mean_la')
+toplo2 <- alldatmos %>% 
+  filter(var == 'mean_chla')
+
+p1 <- ggplot(toplo1, aes(x = valobs, y = valmod)) + 
+  geom_point() + 
+  facet_grid(~ bay_segment) +
+  theme_bw() + 
+  scale_x_continuous(limits = p1lims) + 
+  scale_y_continuous(limits = p1lims) +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(
+    subtitle = 'Month, year light attenuation (m-1)', 
+    y = 'Modelled', 
+    x = 'Observed'
+  )
+
+p2 <- ggplot(toplo2, aes(x = valobs, y = valmod)) + 
+  geom_point() + 
+  facet_grid(~ bay_segment) +
+  theme_bw() + 
+  geom_abline(slope = 1, intercept = 0) +
+  scale_x_continuous(limits = p2lims) + 
+  scale_y_continuous(limits = p2lims) +
+  labs(
+    subtitle = 'Month, year chlorophyll (ug/L)', 
+    y = 'Modelled', 
+    x = 'Observed'
+  )
+
+p1 + p2 + plot_layout(ncol = 1) & theme(strip.background = element_blank())
+```
+
+### Year, month time series
+
+```{r}
+#| fig-height: 8
+#| fig-width: 8
+moddatmos <- moddat %>%
+  .$mos %>% 
+  rename(valmod = val)
+
+obsdatmos <- avedat %>%
+  .$mos %>%
+  filter(var != 'mean_sdm') %>% 
+  rename(valobs = val)
+
+alldatmos <- full_join(obsdatmos, moddatmos, by = c('yr', 'mo', 'bay_segment', 'var')) %>% 
+  mutate(
+    date = paste(yr, mo, '15', sep = '-'),
+    date = ymd(date),
+    bay_segment = factor(bay_segment, levels = levs)
+  )
+
+toplo1 <- alldatmos %>% 
+  filter(var == 'mean_la')
+toplo2 <- alldatmos %>% 
+  filter(var == 'mean_chla')
+
+gds <- guides(color = guide_legend(override.aes = list(pch = c(NA, 16), linetype = c(1, NA))))
+p1 <- ggplot(toplo1, aes(x = date, y = valmod, color = 'Modelled')) + 
+  geom_line() + 
+  geom_point(aes(y = valobs, color = 'Observed')) +
+  facet_grid(bay_segment ~ .) +
+  theme_bw() + 
+  labs(
+    y = 'Year, month light attenuation (m-1)'
+  ) + 
+  scale_colour_manual(values = c('black', 'black')) +
+  gds
+
+p2 <- ggplot(toplo2, aes(x = date, y = valmod, color = 'Modelled')) + 
+  geom_line() + 
+  geom_point(aes(y = valobs, color = 'Observed')) +
+  facet_grid(bay_segment ~ .) +
+  theme_bw() + 
+  labs(
+    y = 'Year, month chlorophyll (ug/L)'
+  ) + 
+  scale_colour_manual(values = c('black', 'black')) + 
+  gds
+
+p1 + p2 + plot_layout(ncol = 1, guides = 'collect') & 
+  theme(
+    strip.background = element_blank(), 
+    legend.title = element_blank(),
+    legend.position = 'top', 
+    axis.title.x = element_blank()
+    )
+```
+
+:::
+
+## Reporting
+
+::: {.panel-tabset .nav-pills}
+
+### Observed report card
+
+```{r}
+#| fig-height: 7
+#| fig-width: 4
+show_matrixtmp(avedat)
+```
+
+### Modelled report card
+
+```{r}
+#| fig-height: 7
+#| fig-width: 4
+show_matrixtmp(moddat)
+```
+
+### Observed OTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(avedat, bay_segment = 'OTB')
+```
+
+### Modelled OTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(moddat, bay_segment = 'OTB')
+```
+
+### Observed HB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(avedat, bay_segment = 'HB')
+```
+
+### Modelled HB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(moddat, bay_segment = 'HB')
+```
+
+### Observed MTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(avedat, bay_segment = 'MTB')
+```
+
+### Modelled MTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(moddat, bay_segment = 'MTB')
+```
+
+### Observed LTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(avedat, bay_segment = 'LTB')
+```
+
+### Modelled LTB
+
+```{r}
+#| fig-height: 5.5
+#| fig-width: 10
+show_segplotlytmp(moddat, bay_segment = 'LTB')
+```
+
+:::
+
+:::
