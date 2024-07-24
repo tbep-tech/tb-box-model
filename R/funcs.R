@@ -468,7 +468,7 @@ show_wqmatrixtmp <- function(avedat, param = c('chla', 'la'), txtsz = 3, trgs = 
 
 }
 
-show_segplotlytmp <- function(avedat, bay_segment = c('OTB', 'HB', 'MTB', 'LTB'), yrrng = c(1975, 2019), family = NULL, partialyr = FALSE){
+show_segplotlytmp <- function(avedat, bay_segment = c('OTB', 'HB', 'MTB', 'LTB'), yrrng = c(1975, 2019), family = NULL, partialyr = FALSE, width = NULL, height = NULL){
 
   bay_segment <- match.arg(bay_segment)
 
@@ -495,8 +495,8 @@ show_segplotlytmp <- function(avedat, bay_segment = c('OTB', 'HB', 'MTB', 'LTB')
   p3 <- plotly::ggplotly(p3, tooltip = 'Action')
   for(i in 1:length(p3$x$data)) p3$x$data[[i]]$showlegend <- FALSE
 
-  p1 <- plotly::ggplotly(p1)
-  p2 <- plotly::ggplotly(p2)
+  p1 <- plotly::ggplotly(p1, width = width, height = height)
+  p2 <- plotly::ggplotly(p2, width = width, height = height)
   p2$x$data[[1]]$showlegend <- FALSE
   p2$x$data[[2]]$showlegend <- FALSE
   p2$x$data[[3]]$showlegend <- FALSE

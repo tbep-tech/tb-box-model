@@ -298,64 +298,64 @@ show_matrixtmp(moddat)
 ### Observed OTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(avedat, bay_segment = 'OTB')
 ```
 
 ### Modelled OTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(moddat, bay_segment = 'OTB')
 ```
 
 ### Observed HB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(avedat, bay_segment = 'HB')
 ```
 
 ### Modelled HB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(moddat, bay_segment = 'HB')
 ```
 
 ### Observed MTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(avedat, bay_segment = 'MTB')
 ```
 
 ### Modelled MTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(moddat, bay_segment = 'MTB')
 ```
 
 ### Observed LTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(avedat, bay_segment = 'LTB')
 ```
 
 ### Modelled LTB
 
 ```{r}
-#| fig-height: 5.5
-#| fig-width: 10
+#| out-height: 6in
+#| out-width: 7.5in
 show_segplotlytmp(moddat, bay_segment = 'LTB')
 ```
 
