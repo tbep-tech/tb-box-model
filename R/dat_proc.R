@@ -3,6 +3,7 @@ library(tidyverse)
 library(data.table)
 library(lubridate)
 library(tbeptools)
+library(sf)
 
 # get raw model output, minimal formatting ----------------------------------------------------
 
@@ -122,3 +123,32 @@ moddatannmos <- list(
 )
 
 save(moddatannmos, file = here('data/moddatannmos.RData'), version = 2)
+
+# get box model segments ----------------------------------------------------------------------
+
+shps <- list.files('T:/05_GIS/WASP_MODEL/Morrison_box_model/', pattern = 'shp$', full.names = T)
+shps <- grep('fixed', shps, value = T)
+
+modsegs <- tibble::tibble(
+  seg = shps
+) |>
+  dplyr::group_by(seg) |>
+  tidyr::nest(.key = 'dat') |>
+  dplyr::mutate(
+    dat = purrr::map(seg, ~ .x |>
+                       st_read() |>
+                       st_union() |>
+                       st_sf() |>
+                       st_buffer(dist = 10) |>
+                       st_buffer(dist = -10) |>
+                       st_simplify(dTolerance = 10) |>
+                       st_transform(crs = 4326))
+  ) |>
+  ungroup() |>
+  unnest('dat') |>
+  st_sf() |>
+  mutate(
+    seg = gsub('^.*\\s(\\d+).*', '\\1', basename(shps))
+  )
+
+save(modsegs, file = here('data/modsegs.RData'))
