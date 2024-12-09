@@ -1,0 +1,119 @@
+---
+title: Selection of years from 2010-2019 for calibration/testing
+date: "`r Sys.Date()`"
+format:
+  html:
+    code-fold: false
+    theme: cosmo
+    css: styles.css
+    code-tools: 
+      source: https://github.com/tbep-tech/tb-box-model/blob/main/docs/hydro_split.qmd
+execute:
+  echo: true
+  warning: false
+  message: false
+  eval: true
+  
+lightbox: true
+---
+
+This document systematically evaluates groups of years from 2010 to 2019 to determine the optimal split for model calibration/validation.  The optimal split is based on the combination of years where the difference in the total load sum between the year groups is minimized.  Each group has five years each. 
+
+```{r}
+library(tidyverse)
+
+load(url('https://github.com/tbep-tech/load-estimates/raw/refs/heads/main/data/mohydat.RData'))
+
+hydat <- mohydat |> 
+  filter(year >= 2010 & year <= 2019) |> 
+  filter(bay_segment %in% c('Old Tampa Bay', 'Hillsborough Bay', 'Middle Tampa Bay')) |> 
+  summarise(
+    hy_load = sum(hy_load_106_m3_mo), 
+    .by = year
+  )
+```
+
+Total hydrologic load to Old Tampa Bay, Hillsborough Bay, and Middle Tampa Bay from 2010 to 2019 is shown below.
+
+```{r}
+# plot of hydrologic load by year
+ggplot(hydat, aes(x = year, y = hy_load)) +
+  geom_col(alpha = 0.7) +
+  scale_x_continuous(breaks = seq(2010, 2019, 1)) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  ) +
+  labs(
+    x = NULL,
+    y = 'Mill m3 / yr',
+    title = 'Hydrologic Load by Year',
+    subtitle = 'Old Tampa Bay, Hillsborough Bay, Middle Tampa Bay'
+  )
+```
+
+The unique combinations of years from 2010 to 2019 are generated. 
+
+```{r}
+yrs <- hydat$year
+lds <- hydat$hy_load
+
+# Generate all possible combinations
+combns <- combn(yrs, length(yrs)/2, simplify = FALSE)
+```
+
+`r length(combns)` combinations of years are generated.  The absolute difference in total load between each unique combination and its set difference (years not in the unique combination) is calculated.
+
+```{r}
+# Calculate absolute difference for each combination
+res <- lapply(combns, function(grp1_yrs) {
+  
+  grp2_yrs <- setdiff(yrs, grp1_yrs)
+  
+  grp1_sum <- sum(lds[yrs %in% grp1_yrs])
+  grp2_sum <- sum(lds[yrs %in% grp2_yrs])
+  
+  list(
+    grp1_yrs = grp1_yrs,
+    grp2_yrs = grp2_yrs,
+    abs_diff = abs(grp1_sum - grp2_sum)
+  )
+  
+})
+```
+
+The optimal grouping is the combination of years with the smallest absolute difference.
+
+```{r}
+# Find the combination with smallest mean difference
+opt_split <- res[[which.min(sapply(res, `[[`, "abs_diff"))]]
+opt_split
+```
+
+A plot of the optimal split is shown below.
+
+```{r}
+toplo <- hydat |> 
+  mutate(
+    grp = ifelse(year %in% opt_split$grp1_yrs, 'Group 1', 'Group 2')
+  )
+
+# plot of hydrologic load by year
+ggplot(toplo, aes(x = year, y = hy_load, fill = grp)) +
+  geom_col(alpha = 0.7) +
+  scale_x_continuous(breaks = seq(2010, 2019, 1)) +
+  theme_minimal() + 
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(), 
+    legend.position = 'bottom'
+  ) +
+  labs(
+    x = NULL,
+    y = 'Mill m3 / yr',
+    fill = 'Split',
+    title = 'Hydrologic Load by Year, showing year splits that minimize difference in sums',
+    subtitle = 'Old Tampa Bay, Hillsborough Bay, Middle Tampa Bay'
+  )
+```
